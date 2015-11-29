@@ -133,7 +133,12 @@ public class GobangView extends View {
         if(event.getAction() == MotionEvent.ACTION_DOWN){
             if(event.getX() >= realRectf.left && event.getX() <= realRectf.right &&
                     event.getY() >= realRectf.top && event.getY() <= realRectf.bottom){
-                addPiece((int)(event.getX()-realRectf.left / 15), (int)(event.getY()-realRectf.top/15), true);
+                if(onClickChessListener != null){
+                    onClickChessListener.onClickChess((int)((event.getY()-realRectf.top)/(realWidth/15)),
+                            (int)((event.getX()-realRectf.left) / (realWidth/15)));
+                }
+                addPiece((int)((event.getY()-realRectf.top)/(realWidth/15)),
+                        (int)((event.getX()-realRectf.left) / (realWidth/15)), true);
             }
         }
         return super.onTouchEvent(event);
