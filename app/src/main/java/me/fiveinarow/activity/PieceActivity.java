@@ -34,6 +34,7 @@ public class PieceActivity extends Activity implements GobangView.OnClickChessLi
         tv_tip = (TextView) findViewById(R.id.tv_tip);
         tv_object = (TextView) findViewById(R.id.tv_object);
         view_gobang = (GobangView) findViewById(R.id.view_gobang);
+        view_gobang.setOnClickChessListener(this);
 
         isBlack = getIntent().getBooleanExtra("isBlack", true);
         isWaiting = !isBlack;
@@ -64,12 +65,15 @@ public class PieceActivity extends Activity implements GobangView.OnClickChessLi
         super.onResume();
         IntentFilter intentFilter = new IntentFilter("isWaiting");
         registerReceiver(waitingReceiver, intentFilter);
+        IntentFilter dataFilter = new IntentFilter("data");
+        registerReceiver(dataReceiver, dataFilter);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         unregisterReceiver(waitingReceiver);
+        unregisterReceiver(dataReceiver);
     }
 
 
@@ -96,6 +100,15 @@ public class PieceActivity extends Activity implements GobangView.OnClickChessLi
         public void onReceive(Context context, Intent intent) {
             isWaiting = intent.getBooleanExtra("isWaiting", true);
             refreshStatus();
+        }
+    };
+
+    private BroadcastReceiver dataReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String data = intent.getStringExtra("data");
+            Piece piece = new Piece(data);
+            view_gobang.addPiece(piece);
         }
     };
 }

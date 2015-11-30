@@ -12,12 +12,15 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import me.fiveinarow.R;
 import me.fiveinarow.adapter.DeviceAdapter;
+import me.fiveinarow.common.P;
+import me.fiveinarow.service.BlueToochClientService;
 import me.fiveinarow.service.BlueToochServerService;
 import me.fiveinarow.widget.LoadingDialog;
 
@@ -62,7 +65,7 @@ public class MenuActivity extends Activity implements View.OnClickListener, Adap
                 loadingDialog = new LoadingDialog(MenuActivity.this, "正在等待玩家加入..");
                 break;
             case R.id.btn_join:
-                Intent client = new Intent(MenuActivity.this, BlueToochServerService.class);
+                Intent client = new Intent(MenuActivity.this, BlueToochClientService.class);
                 startService(client);
                 loadingDialog = new LoadingDialog(MenuActivity.this, "正在查找设备..");
                 break;
@@ -77,12 +80,15 @@ public class MenuActivity extends Activity implements View.OnClickListener, Adap
         super.onResume();
         IntentFilter foundFilter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         registerReceiver(foundDeviceReceiver, foundFilter);
+        IntentFilter conFilter = new IntentFilter("connection");
+        registerReceiver(connectionReceiver, conFilter);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         unregisterReceiver(foundDeviceReceiver);
+        unregisterReceiver(connectionReceiver);
     }
 
     private BroadcastReceiver foundDeviceReceiver = new BroadcastReceiver() {
@@ -90,13 +96,33 @@ public class MenuActivity extends Activity implements View.OnClickListener, Adap
             String action = intent.getAction();
             // 发现设备
             if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                loadingDialog.dismiss();
                 showResult();
                 // 从Intent中获取设备对象
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 // 将设备名称和地址放入array adapter，以便在ListView中显示
                 Log.e("foundDeviceReceiver", "search->" + device.getName() + "  --  " + device.getAddress());
-                list.add(device.getName() + "  --  " + device.getAddress());
+                list.add(device.getName() + "\n" + device.getAddress());
                 adapter.notifyDataSetChanged();
+            }
+        }
+    };
+
+    private BroadcastReceiver connectionReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if(intent.getBooleanExtra("connection", false)){
+                Intent i = new Intent(MenuActivity.this, PieceActivity.class);
+                if(list.size() == 0){
+                    i.putExtra("isBlack", true);
+                }
+                else{
+                    i.putExtra("isBlack", false);
+                }
+                startActivity(i);
+            }
+            else {
+                Toast.makeText(context, "连接失败", Toast.LENGTH_SHORT).show();
             }
         }
     };
@@ -111,6 +137,11 @@ public class MenuActivity extends Activity implements View.OnClickListener, Adap
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-
+        Intent intent = new Intent(MenuActivity.this, BlueToochClientService.class);
+        intent.putExtra(P.OP, P.CONNECT_SERVER);
+        intent.putExtra(P.CONNECT_ADDRESS, list.get(position).substring(list.get(position).indexOf("\n")+ 2));
+        Log.e("connect address", list.get(position));
+        Log.e("connect address", list.get(position).substring(list.get(position).indexOf("\n") + 2));
+        startService(intent);
     }
 }

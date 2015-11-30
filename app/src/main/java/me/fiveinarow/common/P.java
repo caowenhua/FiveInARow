@@ -6,5 +6,7 @@ package me.fiveinarow.common;
 public class P {
     public static final String CHESS_DOWN = "CHESSD";
     public static final String REQUEST_STATUS = "REQUEST_STATUS";
+    public static final String CONNECT_SERVER = "CONNECT_SERVER";
+    public static final String CONNECT_ADDRESS = "CONNECT_ADDRESS";
     public static final String OP = "OP";
 }

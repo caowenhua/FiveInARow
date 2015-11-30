@@ -9,6 +9,7 @@ import android.os.IBinder;
 import android.support.annotation.Nullable;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -62,10 +63,13 @@ public class BlueToochClientService extends Service {
                 else if(op.equals(P.REQUEST_STATUS)){
                     sendWaitingCast();
                 }
+                else if(op.equals(P.CONNECT_SERVER)){
+                    device = bluetoothAdapter.getRemoteDevice(intent.getStringExtra(P.CONNECT_ADDRESS));
+                    new ClientThread().start();
+                }
             }
         }
         return super.onStartCommand(intent, flags, startId);
-//        device = bluetoothAdapter.getRemoteDevice(address);
     }
 
     private class BeginSearchTask extends TimerTask {
@@ -89,13 +93,19 @@ public class BlueToochClientService extends Service {
                 //创建一个Socket连接：只需要服务器在注册时的UUID号
                 socket = device.createRfcommSocketToServiceRecord(bluetooth_uuid);
                 socket.connect();
+                Intent intent = new Intent("connection");
+                intent.putExtra("connection", true);
+                sendBroadcast(intent);
+                new ReadThread().start();
             }
             catch (IOException e)
             {
+                Intent intent = new Intent("connection");
+                intent.putExtra("connection", false);
+                sendBroadcast(intent);
             }
         }
     }
-
 
     class OutputThread extends Thread{
         Piece piece;
@@ -108,6 +118,8 @@ public class BlueToochClientService extends Service {
             try {
                 OutputStream os = socket.getOutputStream();
                 os.write(piece.toString().getBytes());
+                isWaiting = true;
+                sendWaitingCast();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -115,11 +127,41 @@ public class BlueToochClientService extends Service {
     }
 
     class ReadThread extends Thread{
+        InputStream inputStream;
+        byte[] buffer = new byte[1024];
+        int bytes;
         @Override
         public void run() {
             super.run();
+            try {
+                inputStream = socket.getInputStream();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             while (true){
-//                    socket.getInputStream().
+                try {
+                    if((bytes = inputStream.read(buffer)) > 0 )
+                    {
+                        byte[] buf_data = new byte[bytes];
+                        for(int i=0; i<bytes; i++)
+                        {
+                            buf_data[i] = buffer[i];
+                        }
+                        String data = new String(buf_data);
+                        isWaiting = false;
+                        sendWaitingCast();
+                        sendDataCast(data);
+                    }
+                } catch (IOException e) {
+                    try {
+                        inputStream.close();
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
+                    finally{
+                    }
+                    break;
+                }
             }
         }
     }
@@ -127,6 +169,12 @@ public class BlueToochClientService extends Service {
     private void sendWaitingCast(){
         Intent intent = new Intent("isWaiting");
         intent.putExtra("isWaiting", isWaiting);
+        sendBroadcast(intent);
+    }
+
+    private void sendDataCast(String data){
+        Intent intent = new Intent("data");
+        intent.putExtra("data", data);
         sendBroadcast(intent);
     }
 

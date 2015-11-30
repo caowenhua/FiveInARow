@@ -97,25 +97,25 @@ public class GobangView extends View {
     private void drawPoint(Canvas canvas){
         canvas.drawCircle(realRectf.left + realWidth / 30 + realWidth * 3 / 15,
                 realRectf.top + realWidth / 30 + realWidth * 3 / 15,
-                pieceRadius/4, paint);
+                pieceRadius / 4, paint);
 
         canvas.drawCircle(realRectf.left + realWidth / 30 + realWidth * 3 / 15,
                 realRectf.top + realWidth / 30 + realWidth * 11 / 15,
-                pieceRadius/4, paint);
+                pieceRadius / 4, paint);
 
 
         canvas.drawCircle(realRectf.left + realWidth / 30 + realWidth * 11 / 15,
                 realRectf.top + realWidth / 30 + realWidth * 3 / 15,
-                pieceRadius/4, paint);
+                pieceRadius / 4, paint);
 
 
         canvas.drawCircle(realRectf.left + realWidth / 30 + realWidth * 11 / 15,
                 realRectf.top + realWidth / 30 + realWidth * 11 / 15,
-                pieceRadius/4, paint);
+                pieceRadius / 4, paint);
 
         canvas.drawCircle(realRectf.left + realWidth / 30 + realWidth * 7 / 15,
                 realRectf.top + realWidth / 30 + realWidth * 7 / 15,
-                pieceRadius/4, paint);
+                pieceRadius / 4, paint);
     }
 
     private void drawPiece(Canvas canvas ,int row, int column, boolean isBlack){
@@ -146,6 +146,11 @@ public class GobangView extends View {
             }
         }
         return super.onTouchEvent(event);
+    }
+
+    public void addPiece(Piece piece){
+        pieceList.add(piece);
+        invalidate();
     }
 
     public void addPiece(int row, int column, boolean isBlack){

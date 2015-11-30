@@ -9,6 +9,7 @@ import android.os.IBinder;
 import android.support.annotation.Nullable;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -75,13 +76,7 @@ public class BlueToochServerService extends Service {
                 // MY_UUID is the app's UUID string, also used by the client code
                 BluetoothServerSocket tmp = bluetoothAdapter.listenUsingRfcommWithServiceRecord("FiveInARow", bluetooth_uuid);
                 mServerSocket = tmp;
-                Intent intent = new Intent("connection");
-                intent.putExtra("connection", true);
-                sendBroadcast(intent);
             } catch (IOException e) {
-                Intent intent = new Intent("connection");
-                intent.putExtra("connection", false);
-                sendBroadcast(intent);
             }
         }
 
@@ -93,6 +88,9 @@ public class BlueToochServerService extends Service {
                     try {
                         socket = mServerSocket.accept();
                     } catch (IOException e) {
+                        Intent intent = new Intent("connection");
+                        intent.putExtra("connection", false);
+                        sendBroadcast(intent);
                         break;
                     }
                     // If a connection was accepted
@@ -100,8 +98,16 @@ public class BlueToochServerService extends Service {
                         // Do work to manage the connection (in a separate thread)
                         //manageConnectedSocket(socket);
                         String s = socket.getRemoteDevice().getName() + "/n" + socket.getRemoteDevice().getAddress();
+                        Intent intent = new Intent("connection");
+                        intent.putExtra("connection", true);
+                        sendBroadcast(intent);
                         new ReadThread().start();
                         break;
+                    }
+                    else{
+                        Intent intent = new Intent("connection");
+                        intent.putExtra("connection", false);
+                        sendBroadcast(intent);
                     }
                 }
             }
@@ -133,11 +139,41 @@ public class BlueToochServerService extends Service {
     }
 
     class ReadThread extends Thread{
+        InputStream inputStream;
+        byte[] buffer = new byte[1024];
+        int bytes;
         @Override
         public void run() {
             super.run();
+            try {
+                inputStream = socket.getInputStream();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             while (true){
-//                    socket.getInputStream().
+                try {
+                    if((bytes = inputStream.read(buffer)) > 0 )
+                    {
+                        byte[] buf_data = new byte[bytes];
+                        for(int i=0; i<bytes; i++)
+                        {
+                            buf_data[i] = buffer[i];
+                        }
+                        String data = new String(buf_data);
+                        isWaiting = false;
+                        sendWaitingCast();
+                        sendDataCast(data);
+                    }
+                } catch (IOException e) {
+                    try {
+                        inputStream.close();
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
+                    finally{
+                    }
+                    break;
+                }
             }
         }
     }
@@ -157,6 +193,12 @@ public class BlueToochServerService extends Service {
     private void sendWaitingCast(){
         Intent intent = new Intent("isWaiting");
         intent.putExtra("isWaiting", isWaiting);
+        sendBroadcast(intent);
+    }
+
+    private void sendDataCast(String data){
+        Intent intent = new Intent("data");
+        intent.putExtra("data", data);
         sendBroadcast(intent);
     }
 }
