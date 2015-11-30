@@ -14,6 +14,9 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
 
+import me.fiveinarow.bean.Piece;
+import me.fiveinarow.common.P;
+
 /**
  * Created by caowenhua on 2015/11/29.
  */
@@ -21,7 +24,10 @@ public class BlueToochServerService extends Service {
 
     private UUID bluetooth_uuid = UUID.fromString("D7437E5C-E841-723C-74DF-4158924F6B26");
     private BluetoothAdapter bluetoothAdapter;
+    private BluetoothServerSocket mServerSocket;
+    private BluetoothSocket socket = null;
     private Timer beginSearchTimer;
+    private boolean isWaiting;
 
     @Nullable
     @Override
@@ -38,36 +44,65 @@ public class BlueToochServerService extends Service {
         bluetoothAdapter.enable();
         beginSearchTimer = new Timer();
         beginSearchTimer.schedule(new BeginSearchTask(), 500, 500);
+
+        isWaiting = false;
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        if(intent != null){
+            String op = intent.getStringExtra(P.OP);
+            if(op != null){
+                if(op.equals(P.CHESS_DOWN)){
+                    Piece piece = (Piece) intent.getSerializableExtra("piece");
+                    OutputThread thread = new OutputThread(piece);
+                    thread.start();
+                    isWaiting = true;
+                    sendWaitingCast();
+                }
+                else if(op.equals(P.REQUEST_STATUS)){
+                    sendWaitingCast();
+                }
+            }
+        }
+        return super.onStartCommand(intent, flags, startId);
     }
 
     private class AcceptThread extends Thread {
-        private BluetoothServerSocket mServerSocket;
-        private BluetoothSocket socket = null;
         public AcceptThread() {
             // Use a temporary object that is later assigned to mmServerSocket,
-            BluetoothServerSocket tmp = null;
             try {
                 // MY_UUID is the app's UUID string, also used by the client code
-                tmp = bluetoothAdapter.listenUsingRfcommWithServiceRecord("FiveInARow", bluetooth_uuid);
-            } catch (IOException e) { }
-            mServerSocket = tmp;
+                BluetoothServerSocket tmp = bluetoothAdapter.listenUsingRfcommWithServiceRecord("FiveInARow", bluetooth_uuid);
+                mServerSocket = tmp;
+                Intent intent = new Intent("connection");
+                intent.putExtra("connection", true);
+                sendBroadcast(intent);
+            } catch (IOException e) {
+                Intent intent = new Intent("connection");
+                intent.putExtra("connection", false);
+                sendBroadcast(intent);
+            }
         }
 
         public void run() {
             socket = null;
             // Keep listening until exception occurs or a socket is returned
-            while (true) {
-                try {
-                    socket = mServerSocket.accept();
-                } catch (IOException e) {
-                    break;
-                }
-                // If a connection was accepted
-                if (socket != null) {
-                    // Do work to manage the connection (in a separate thread)
-                    //manageConnectedSocket(socket);
-                    String s = socket.getRemoteDevice().getName() + "/n" + socket.getRemoteDevice().getAddress();
-                    break;
+            if(mServerSocket != null){
+                while (true) {
+                    try {
+                        socket = mServerSocket.accept();
+                    } catch (IOException e) {
+                        break;
+                    }
+                    // If a connection was accepted
+                    if (socket != null) {
+                        // Do work to manage the connection (in a separate thread)
+                        //manageConnectedSocket(socket);
+                        String s = socket.getRemoteDevice().getName() + "/n" + socket.getRemoteDevice().getAddress();
+                        new ReadThread().start();
+                        break;
+                    }
                 }
             }
         }
@@ -78,18 +113,31 @@ public class BlueToochServerService extends Service {
                 mServerSocket.close();
             } catch (IOException e) { }
         }
+    }
 
-        class outputThread extends Thread{
+    class OutputThread extends Thread{
+        Piece piece;
+        public OutputThread(Piece piece) {
+            this.piece = piece;
+        }
+        @Override
+        public void run() {
+            super.run();
+            try {
+                OutputStream os = socket.getOutputStream();
+                os.write(piece.toString().getBytes());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
-            @Override
-            public void run() {
-                super.run();
-                try {
-                    OutputStream os = socket.getOutputStream();
-                    os.write("0".getBytes());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+    class ReadThread extends Thread{
+        @Override
+        public void run() {
+            super.run();
+            while (true){
+//                    socket.getInputStream().
             }
         }
     }
@@ -104,5 +152,11 @@ public class BlueToochServerService extends Service {
                 new AcceptThread().start();
             }
         }
+    }
+
+    private void sendWaitingCast(){
+        Intent intent = new Intent("isWaiting");
+        intent.putExtra("isWaiting", isWaiting);
+        sendBroadcast(intent);
     }
 }

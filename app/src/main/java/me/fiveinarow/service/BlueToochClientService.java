@@ -9,9 +9,13 @@ import android.os.IBinder;
 import android.support.annotation.Nullable;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
+
+import me.fiveinarow.bean.Piece;
+import me.fiveinarow.common.P;
 
 /**
  * Created by caowenhua on 2015/11/29.
@@ -23,6 +27,8 @@ public class BlueToochClientService extends Service {
     private BluetoothSocket socket;
     private BluetoothDevice device;
     private Timer beginSearchTimer;
+
+    private boolean isWaiting;
 
     @Nullable
     @Override
@@ -43,6 +49,21 @@ public class BlueToochClientService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        if(intent != null){
+            String op = intent.getStringExtra(P.OP);
+            if(op != null){
+                if(op.equals(P.CHESS_DOWN)){
+                    Piece piece = (Piece) intent.getSerializableExtra("piece");
+                    OutputThread thread = new OutputThread(piece);
+                    thread.start();
+                    isWaiting = true;
+                    sendWaitingCast();
+                }
+                else if(op.equals(P.REQUEST_STATUS)){
+                    sendWaitingCast();
+                }
+            }
+        }
         return super.onStartCommand(intent, flags, startId);
 //        device = bluetoothAdapter.getRemoteDevice(address);
     }
@@ -73,6 +94,40 @@ public class BlueToochClientService extends Service {
             {
             }
         }
+    }
+
+
+    class OutputThread extends Thread{
+        Piece piece;
+        public OutputThread(Piece piece) {
+            this.piece = piece;
+        }
+        @Override
+        public void run() {
+            super.run();
+            try {
+                OutputStream os = socket.getOutputStream();
+                os.write(piece.toString().getBytes());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    class ReadThread extends Thread{
+        @Override
+        public void run() {
+            super.run();
+            while (true){
+//                    socket.getInputStream().
+            }
+        }
+    }
+
+    private void sendWaitingCast(){
+        Intent intent = new Intent("isWaiting");
+        intent.putExtra("isWaiting", isWaiting);
+        sendBroadcast(intent);
     }
 
     private class CheckBluetoothStatusTask extends TimerTask{

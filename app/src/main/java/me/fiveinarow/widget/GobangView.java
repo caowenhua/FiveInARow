@@ -28,6 +28,7 @@ public class GobangView extends View {
     private OnClickChessListener onClickChessListener;
 
     private List<Piece> pieceList;
+    private boolean isCanClick;
 
     public GobangView(Context context) {
         super(context);
@@ -49,6 +50,7 @@ public class GobangView extends View {
         paint.setAntiAlias(true);
 
         pieceList = new ArrayList<>();
+        isCanClick = true;
     }
 
     @Override
@@ -130,15 +132,17 @@ public class GobangView extends View {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if(event.getAction() == MotionEvent.ACTION_DOWN){
-            if(event.getX() >= realRectf.left && event.getX() <= realRectf.right &&
-                    event.getY() >= realRectf.top && event.getY() <= realRectf.bottom){
-                if(onClickChessListener != null){
-                    onClickChessListener.onClickChess((int)((event.getY()-realRectf.top)/(realWidth/15)),
-                            (int)((event.getX()-realRectf.left) / (realWidth/15)));
+        if(isCanClick){
+            if(event.getAction() == MotionEvent.ACTION_DOWN){
+                if(event.getX() >= realRectf.left && event.getX() <= realRectf.right &&
+                        event.getY() >= realRectf.top && event.getY() <= realRectf.bottom){
+                    if(onClickChessListener != null){
+                        onClickChessListener.onClickChess((int)((event.getY()-realRectf.top)/(realWidth/15)),
+                                (int)((event.getX()-realRectf.left) / (realWidth/15)));
+                    }
+                    addPiece((int)((event.getY()-realRectf.top)/(realWidth/15)),
+                            (int)((event.getX()-realRectf.left) / (realWidth/15)), true);
                 }
-                addPiece((int)((event.getY()-realRectf.top)/(realWidth/15)),
-                        (int)((event.getX()-realRectf.left) / (realWidth/15)), true);
             }
         }
         return super.onTouchEvent(event);
@@ -151,6 +155,10 @@ public class GobangView extends View {
         piece.setRow(row);
         pieceList.add(piece);
         invalidate();
+    }
+
+    public void setIsCanClick(boolean isCanClick) {
+        this.isCanClick = isCanClick;
     }
 
     public interface OnClickChessListener{
