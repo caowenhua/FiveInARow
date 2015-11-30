@@ -10,6 +10,8 @@ import android.support.annotation.Nullable;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 
 /**
@@ -18,7 +20,8 @@ import java.util.UUID;
 public class BlueToochServerService extends Service {
 
     private UUID bluetooth_uuid = UUID.fromString("D7437E5C-E841-723C-74DF-4158924F6B26");
-    private BluetoothAdapter adapter;
+    private BluetoothAdapter bluetoothAdapter;
+    private Timer beginSearchTimer;
 
     @Nullable
     @Override
@@ -30,13 +33,11 @@ public class BlueToochServerService extends Service {
     public void onCreate() {
         super.onCreate();
 
-        adapter = BluetoothAdapter.getDefaultAdapter();
-        adapter.setName("gameServer");
-        adapter.enable();
-        while(!adapter.isEnabled()){
-
-        }
-        new AcceptThread().start();
+        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        bluetoothAdapter.setName("gameServer");
+        bluetoothAdapter.enable();
+        beginSearchTimer = new Timer();
+        beginSearchTimer.schedule(new BeginSearchTask(), 500, 500);
     }
 
     private class AcceptThread extends Thread {
@@ -47,10 +48,11 @@ public class BlueToochServerService extends Service {
             BluetoothServerSocket tmp = null;
             try {
                 // MY_UUID is the app's UUID string, also used by the client code
-                tmp = adapter.listenUsingRfcommWithServiceRecord("FiveInARow", bluetooth_uuid);
+                tmp = bluetoothAdapter.listenUsingRfcommWithServiceRecord("FiveInARow", bluetooth_uuid);
             } catch (IOException e) { }
             mServerSocket = tmp;
         }
+
         public void run() {
             socket = null;
             // Keep listening until exception occurs or a socket is returned
@@ -69,6 +71,7 @@ public class BlueToochServerService extends Service {
                 }
             }
         }
+
         /** Will cancel the listening socket, and cause the thread to finish */
         public void cancel() {
             try {
@@ -87,6 +90,18 @@ public class BlueToochServerService extends Service {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+            }
+        }
+    }
+
+    private class BeginSearchTask extends TimerTask {
+        @Override
+        public void run() {
+            if(bluetoothAdapter.isEnabled()){
+                if(beginSearchTimer != null){
+                    beginSearchTimer.cancel();
+                }
+                new AcceptThread().start();
             }
         }
     }

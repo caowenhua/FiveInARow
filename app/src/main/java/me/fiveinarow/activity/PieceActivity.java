@@ -10,9 +10,13 @@ import me.fiveinarow.R;
  */
 public class PieceActivity extends Activity {
 
+    private boolean isBlack;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_piece);
+
+        isBlack = getIntent().getBooleanExtra("isBlack", true);
     }
 }
