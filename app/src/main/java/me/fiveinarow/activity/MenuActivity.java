@@ -82,6 +82,8 @@ public class MenuActivity extends Activity implements View.OnClickListener, Adap
         registerReceiver(foundDeviceReceiver, foundFilter);
         IntentFilter conFilter = new IntentFilter("connection");
         registerReceiver(connectionReceiver, conFilter);
+        IntentFilter serFilter = new IntentFilter("connectionServer");
+        registerReceiver(connectionServerReceiver, serFilter);
     }
 
     @Override
@@ -89,6 +91,7 @@ public class MenuActivity extends Activity implements View.OnClickListener, Adap
         super.onPause();
         unregisterReceiver(foundDeviceReceiver);
         unregisterReceiver(connectionReceiver);
+        unregisterReceiver(connectionServerReceiver);
     }
 
     private BroadcastReceiver foundDeviceReceiver = new BroadcastReceiver() {
@@ -108,17 +111,26 @@ public class MenuActivity extends Activity implements View.OnClickListener, Adap
         }
     };
 
+    private BroadcastReceiver connectionServerReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if(intent.getBooleanExtra("connection", false)){
+                Intent i = new Intent(MenuActivity.this, PieceActivity.class);
+                    i.putExtra("isBlack", true);
+                startActivity(i);
+            }
+            else {
+                Toast.makeText(context, "连接失败", Toast.LENGTH_SHORT).show();
+            }
+        }
+    };
+
     private BroadcastReceiver connectionReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             if(intent.getBooleanExtra("connection", false)){
                 Intent i = new Intent(MenuActivity.this, PieceActivity.class);
-                if(list.size() == 0){
-                    i.putExtra("isBlack", true);
-                }
-                else{
                     i.putExtra("isBlack", false);
-                }
                 startActivity(i);
             }
             else {
@@ -139,9 +151,9 @@ public class MenuActivity extends Activity implements View.OnClickListener, Adap
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         Intent intent = new Intent(MenuActivity.this, BlueToochClientService.class);
         intent.putExtra(P.OP, P.CONNECT_SERVER);
-        intent.putExtra(P.CONNECT_ADDRESS, list.get(position).substring(list.get(position).indexOf("\n")+ 2));
+        intent.putExtra(P.CONNECT_ADDRESS, list.get(position).substring(list.get(position).indexOf("\n")+ 1));
         Log.e("connect address", list.get(position));
-        Log.e("connect address", list.get(position).substring(list.get(position).indexOf("\n") + 2));
+        Log.e("connect address", list.get(position).substring(list.get(position).indexOf("\n") + 1));
         startService(intent);
     }
 }

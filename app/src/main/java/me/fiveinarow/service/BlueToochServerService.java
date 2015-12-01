@@ -88,8 +88,8 @@ public class BlueToochServerService extends Service {
                     try {
                         socket = mServerSocket.accept();
                     } catch (IOException e) {
-                        Intent intent = new Intent("connection");
-                        intent.putExtra("connection", false);
+                        Intent intent = new Intent("connectionServer");
+                        intent.putExtra("connectionServer", false);
                         sendBroadcast(intent);
                         break;
                     }
@@ -98,15 +98,15 @@ public class BlueToochServerService extends Service {
                         // Do work to manage the connection (in a separate thread)
                         //manageConnectedSocket(socket);
                         String s = socket.getRemoteDevice().getName() + "/n" + socket.getRemoteDevice().getAddress();
-                        Intent intent = new Intent("connection");
-                        intent.putExtra("connection", true);
+                        Intent intent = new Intent("connectionServer");
+                        intent.putExtra("connectionServer", true);
                         sendBroadcast(intent);
                         new ReadThread().start();
                         break;
                     }
                     else{
-                        Intent intent = new Intent("connection");
-                        intent.putExtra("connection", false);
+                        Intent intent = new Intent("connectionServer");
+                        intent.putExtra("connectionServer", false);
                         sendBroadcast(intent);
                     }
                 }
