@@ -30,6 +30,8 @@ public class GobangView extends View {
     private List<Piece> pieceList;
     private boolean isCanClick;
 
+    private int[][] chess;// 1 black -1 white 0 none
+
     public GobangView(Context context) {
         super(context);
         init();
@@ -51,6 +53,13 @@ public class GobangView extends View {
 
         pieceList = new ArrayList<>();
         isCanClick = true;
+
+        chess = new int[15][15];
+        for (int i = 0; i < 15; i++) {
+            for (int j = 0; j < 15; j++) {
+                chess[i][j] = 0;
+            }
+        }
     }
 
     @Override
@@ -103,11 +112,9 @@ public class GobangView extends View {
                 realRectf.top + realWidth / 30 + realWidth * 11 / 15,
                 pieceRadius / 4, paint);
 
-
         canvas.drawCircle(realRectf.left + realWidth / 30 + realWidth * 11 / 15,
                 realRectf.top + realWidth / 30 + realWidth * 3 / 15,
                 pieceRadius / 4, paint);
-
 
         canvas.drawCircle(realRectf.left + realWidth / 30 + realWidth * 11 / 15,
                 realRectf.top + realWidth / 30 + realWidth * 11 / 15,
@@ -149,11 +156,23 @@ public class GobangView extends View {
     }
 
     public void addPiece(Piece piece){
+        if(piece.isBlack()){
+            chess[piece.getRow()][piece.getColumn()] = 1;
+        }
+        else {
+            chess[piece.getRow()][piece.getColumn()] = -1;
+        }
         pieceList.add(piece);
         invalidate();
     }
 
     public void addPiece(int row, int column, boolean isBlack){
+        if(isBlack){
+            chess[row][column] = 1;
+        }
+        else {
+            chess[row][column] = -1;
+        }
         Piece piece = new Piece();
         piece.setColumn(column);
         piece.setIsBlack(isBlack);
@@ -162,8 +181,83 @@ public class GobangView extends View {
         invalidate();
     }
 
+    private boolean judge(Piece piece){
+        if(piece.getRow() < 4){
+            if(piece.getColumn() < 4){
+                int rowDValue = 5 - piece.getRow();
+                int columnDValue = 5 - piece.getColumn();
+                //four diection
+                for (int i = 0; i <= piece.getColumn(); i++) {
+                    for (int j = i; j < i + 5; j++) {
+                        if(chess[piece.getRow()][j] != getIsBlack(piece.isBlack())){
+                            break;
+                        }
+                        if(j == i + 4){
+                            return true;
+                        }
+                    }
+                }
+                for (int i = 0; i <= piece.getRow(); i++) {
+                    for (int j = i; j < i + 5; j++) {
+                        if(chess[j][piece.getColumn()] != getIsBlack(piece.isBlack())){
+                            break;
+                        }
+                        if(j == i + 4){
+                            return true;
+                        }
+                    }
+                }
+                for (int i = 0; i <= ((rowDValue > columnDValue)? rowDValue : columnDValue); i++) {
+
+                }
+            }
+            else if(piece.getColumn() > 10){
+
+            }
+            else{
+
+            }
+        }
+        else if(piece.getRow() > 10){
+            if(piece.getColumn() < 4){
+
+            }
+            else if(piece.getColumn() > 10){
+
+            }
+            else{
+
+            }
+        }
+        else{
+            if(piece.getColumn() < 4){
+
+            }
+            else if(piece.getColumn() > 10){
+
+            }
+            else{
+
+            }
+        }
+        return false;
+    }
+
+    private int getIsBlack(boolean isBlack){
+        if(isBlack){
+            return 1;
+        }
+        else {
+            return 0;
+        }
+    }
+
     public void setIsCanClick(boolean isCanClick) {
         this.isCanClick = isCanClick;
+    }
+
+    public interface OnChessWinListener{
+        void onChessWin(boolean isBlackWin);
     }
 
     public interface OnClickChessListener{
