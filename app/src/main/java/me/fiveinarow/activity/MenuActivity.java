@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.os.PowerManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -37,10 +38,15 @@ public class MenuActivity extends Activity implements View.OnClickListener, Adap
     private ListView lv_result;
     private DeviceAdapter adapter;
 
+    private PowerManager.WakeLock wl;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_menu);
+
+        PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        wl = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK, "MyTag");
 
         btn_create = (Button) findViewById(R.id.btn_create);
         btn_join = (Button) findViewById(R.id.btn_join);
@@ -84,6 +90,8 @@ public class MenuActivity extends Activity implements View.OnClickListener, Adap
         registerReceiver(connectionReceiver, conFilter);
         IntentFilter serFilter = new IntentFilter("connectionServer");
         registerReceiver(connectionServerReceiver, serFilter);
+
+        wl.acquire();
     }
 
     @Override
@@ -92,6 +100,8 @@ public class MenuActivity extends Activity implements View.OnClickListener, Adap
         unregisterReceiver(foundDeviceReceiver);
         unregisterReceiver(connectionReceiver);
         unregisterReceiver(connectionServerReceiver);
+
+        wl.release();
     }
 
     private BroadcastReceiver foundDeviceReceiver = new BroadcastReceiver() {
@@ -105,7 +115,10 @@ public class MenuActivity extends Activity implements View.OnClickListener, Adap
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 // 将设备名称和地址放入array adapter，以便在ListView中显示
                 Log.e("foundDeviceReceiver", "search->" + device.getName() + "  --  " + device.getAddress());
-                list.add(device.getName() + "\n" + device.getAddress());
+                String s = device.getName() + "\n" + device.getAddress();
+                if(!list.contains(s)){
+                    list.add(device.getName() + "\n" + device.getAddress());
+                }
                 adapter.notifyDataSetChanged();
             }
         }
@@ -114,10 +127,11 @@ public class MenuActivity extends Activity implements View.OnClickListener, Adap
     private BroadcastReceiver connectionServerReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if(intent.getBooleanExtra("connection", false)){
+            if(intent.getBooleanExtra("connectionServer", false)){
                 Intent i = new Intent(MenuActivity.this, PieceActivity.class);
-                    i.putExtra("isBlack", true);
+                i.putExtra("isBlack", true);
                 startActivity(i);
+                finish();
             }
             else {
                 Toast.makeText(context, "连接失败", Toast.LENGTH_SHORT).show();
@@ -130,14 +144,23 @@ public class MenuActivity extends Activity implements View.OnClickListener, Adap
         public void onReceive(Context context, Intent intent) {
             if(intent.getBooleanExtra("connection", false)){
                 Intent i = new Intent(MenuActivity.this, PieceActivity.class);
-                    i.putExtra("isBlack", false);
+                i.putExtra("isBlack", false);
                 startActivity(i);
+                finish();
             }
             else {
                 Toast.makeText(context, "连接失败", Toast.LENGTH_SHORT).show();
             }
         }
     };
+
+    private void hideResult(){
+        lv_result.setVisibility(View.GONE);
+        lv_result.setOnItemClickListener(null);
+        btn_quit.setOnClickListener(this);
+        btn_join.setOnClickListener(this);
+        btn_create.setOnClickListener(this);
+    }
 
     private void showResult(){
         lv_result.setVisibility(View.VISIBLE);
@@ -155,5 +178,16 @@ public class MenuActivity extends Activity implements View.OnClickListener, Adap
         Log.e("connect address", list.get(position));
         Log.e("connect address", list.get(position).substring(list.get(position).indexOf("\n") + 1));
         startService(intent);
+    }
+
+    @Override
+    public void onBackPressed() {
+        if(lv_result.isShown()){
+            hideResult();
+        }
+        else{
+            super.onBackPressed();
+        }
+
     }
 }

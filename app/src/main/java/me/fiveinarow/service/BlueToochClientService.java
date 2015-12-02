@@ -67,6 +67,9 @@ public class BlueToochClientService extends Service {
                     device = bluetoothAdapter.getRemoteDevice(intent.getStringExtra(P.CONNECT_ADDRESS));
                     new ClientThread().start();
                 }
+                else if(op.equals(P.OVER_GAME)){
+                    new EndThread().start();
+                }
             }
         }
         return super.onStartCommand(intent, flags, startId);
@@ -103,6 +106,19 @@ public class BlueToochClientService extends Service {
                 Intent intent = new Intent("connection");
                 intent.putExtra("connection", false);
                 sendBroadcast(intent);
+            }
+        }
+    }
+
+    class EndThread extends Thread{
+        @Override
+        public void run() {
+            super.run();
+            try {
+                OutputStream os = socket.getOutputStream();
+                os.write("GAMEOVER".getBytes());
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }
@@ -148,9 +164,14 @@ public class BlueToochClientService extends Service {
                             buf_data[i] = buffer[i];
                         }
                         String data = new String(buf_data);
-                        isWaiting = false;
-                        sendWaitingCast();
-                        sendDataCast(data);
+                        if(data.equals("GAMEOVER")){
+                            sendGameOverCast();
+                        }
+                        else{
+                            isWaiting = false;
+                            sendWaitingCast();
+                            sendDataCast(data);
+                        }
                     }
                 } catch (IOException e) {
                     try {
@@ -164,6 +185,11 @@ public class BlueToochClientService extends Service {
                 }
             }
         }
+    }
+
+    private void sendGameOverCast() {
+        Intent intent = new Intent("GAMEOVER");
+        sendBroadcast(intent);
     }
 
     private void sendWaitingCast(){

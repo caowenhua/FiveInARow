@@ -7,6 +7,7 @@ import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -64,6 +65,9 @@ public class BlueToochServerService extends Service {
                 else if(op.equals(P.REQUEST_STATUS)){
                     sendWaitingCast();
                 }
+                else if(op.equals(P.OVER_GAME)){
+                    new EndThread().start();
+                }
             }
         }
         return super.onStartCommand(intent, flags, startId);
@@ -88,6 +92,7 @@ public class BlueToochServerService extends Service {
                     try {
                         socket = mServerSocket.accept();
                     } catch (IOException e) {
+                        e.printStackTrace();
                         Intent intent = new Intent("connectionServer");
                         intent.putExtra("connectionServer", false);
                         sendBroadcast(intent);
@@ -98,6 +103,7 @@ public class BlueToochServerService extends Service {
                         // Do work to manage the connection (in a separate thread)
                         //manageConnectedSocket(socket);
                         String s = socket.getRemoteDevice().getName() + "/n" + socket.getRemoteDevice().getAddress();
+                        Log.e("server success", s);
                         Intent intent = new Intent("connectionServer");
                         intent.putExtra("connectionServer", true);
                         sendBroadcast(intent);
@@ -118,6 +124,19 @@ public class BlueToochServerService extends Service {
             try {
                 mServerSocket.close();
             } catch (IOException e) { }
+        }
+    }
+
+    class EndThread extends Thread{
+        @Override
+        public void run() {
+            super.run();
+            try {
+                OutputStream os = socket.getOutputStream();
+                os.write("GAMEOVER".getBytes());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -160,9 +179,14 @@ public class BlueToochServerService extends Service {
                             buf_data[i] = buffer[i];
                         }
                         String data = new String(buf_data);
-                        isWaiting = false;
-                        sendWaitingCast();
-                        sendDataCast(data);
+                        if(data.equals("GAMEOVER")){
+                            sendGameOverCast();
+                        }
+                        else{
+                            isWaiting = false;
+                            sendWaitingCast();
+                            sendDataCast(data);
+                        }
                     }
                 } catch (IOException e) {
                     try {
@@ -188,6 +212,11 @@ public class BlueToochServerService extends Service {
                 new AcceptThread().start();
             }
         }
+    }
+
+    private void sendGameOverCast() {
+        Intent intent = new Intent("GAMEOVER");
+        sendBroadcast(intent);
     }
 
     private void sendWaitingCast(){

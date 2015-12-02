@@ -29,6 +29,7 @@ public class GobangView extends View {
 
     private List<Piece> pieceList;
     private boolean isCanClick;
+    private boolean isBlackChess;
 
     private int[][] chess;// 1 black -1 white 0 none
 
@@ -53,6 +54,7 @@ public class GobangView extends View {
 
         pieceList = new ArrayList<>();
         isCanClick = true;
+        isBlackChess = true;
 
         chess = new int[15][15];
         for (int i = 0; i < 15; i++) {
@@ -74,7 +76,7 @@ public class GobangView extends View {
         }
 
         realWidth = realRectf.right - realRectf.left;
-        pieceRadius = (realRectf.right - realRectf.left)/32;
+        pieceRadius = (realRectf.right - realRectf.left)/32 - 2;
 
     }
 
@@ -143,12 +145,19 @@ public class GobangView extends View {
             if(event.getAction() == MotionEvent.ACTION_DOWN){
                 if(event.getX() >= realRectf.left && event.getX() <= realRectf.right &&
                         event.getY() >= realRectf.top && event.getY() <= realRectf.bottom){
-                    if(onClickChessListener != null){
-                        onClickChessListener.onClickChess((int)((event.getY()-realRectf.top)/(realWidth/15)),
-                                (int)((event.getX()-realRectf.left) / (realWidth/15)));
+                    int row = (int)((event.getY()-realRectf.top)/(realWidth/15));
+                    int column = (int)((event.getX()-realRectf.left) / (realWidth/15));
+                    boolean isAddSuccess = false;
+                    if(chess[row][column] == 0){
+                        isAddSuccess = true;
                     }
-                    addPiece((int)((event.getY()-realRectf.top)/(realWidth/15)),
-                            (int)((event.getX()-realRectf.left) / (realWidth/15)), true);
+                    if(isAddSuccess){
+                        addPiece((int)((event.getY()-realRectf.top)/(realWidth/15)),
+                                (int)((event.getX()-realRectf.left) / (realWidth / 15)), isBlackChess);
+                    }
+                    if(onClickChessListener != null){
+                        onClickChessListener.onClickChess(row, column, isAddSuccess);
+                    }
                 }
             }
         }
@@ -183,10 +192,8 @@ public class GobangView extends View {
 
     private boolean judge(Piece piece){
         if(piece.getRow() < 4){
+            //左上角
             if(piece.getColumn() < 4){
-                int rowDValue = 5 - piece.getRow();
-                int columnDValue = 5 - piece.getColumn();
-                //four diection
                 for (int i = 0; i <= piece.getColumn(); i++) {
                     for (int j = i; j < i + 5; j++) {
                         if(chess[piece.getRow()][j] != getIsBlack(piece.isBlack())){
@@ -207,15 +214,72 @@ public class GobangView extends View {
                         }
                     }
                 }
-                for (int i = 0; i <= ((rowDValue > columnDValue)? rowDValue : columnDValue); i++) {
-
+                for (int i = 0; i <= ((piece.getRow() < piece.getColumn()) ? piece.getRow() : piece.getColumn()); i++) {
+                    for (int j = 0; j < 5; j++) {
+                        if(chess[i+j][piece.getColumn()-piece.getRow()+i+j] != getIsBlack(piece.isBlack())){
+                            break;
+                        }
+                        if(j == i + 4){
+                            return true;
+                        }
+                    }
                 }
             }
+            //右上角
             else if(piece.getColumn() > 10){
-
+                for (int i = 14; i >= piece.getColumn(); i--) {
+                    for (int j = i; j > i - 5 ; j--) {
+                        if(chess[piece.getRow()][j] != getIsBlack(piece.isBlack())){
+                            break;
+                        }
+                        if(j == i - 4){
+                            return true;
+                        }
+                    }
+                }
+                for (int i = 0; i <= piece.getRow(); i++) {
+                    for (int j = i; j < i + 5; j++) {
+                        if(chess[j][piece.getColumn()] != getIsBlack(piece.isBlack())){
+                            break;
+                        }
+                        if(j == i + 4){
+                            return true;
+                        }
+                    }
+                }
+                for (int i = 0; i < ((piece.getRow() < 14 - piece.getColumn()) ? piece.getRow() : 14 - piece.getColumn()); i++) {
+                    for (int j = 0; j < 5; j++) {
+                        if(chess[i+j][14 - piece.getColumn()-piece.getRow()+i+j] != getIsBlack(piece.isBlack())){
+                            break;
+                        }
+                        if(j == i + 4){
+                            return true;
+                        }
+                    }
+                }
             }
             else{
-
+                for (int i = piece.getColumn() - 4; i <= piece.getColumn(); i++) {
+                    for (int j = i; j < i + 5; j++) {
+                        if(chess[piece.getRow()][j] != getIsBlack(piece.isBlack())){
+                            break;
+                        }
+                        if(j == i + 4){
+                            return true;
+                        }
+                    }
+                }
+                for (int i = 0; i <= piece.getRow(); i++) {
+                    for (int j = i; j < i + 5; j++) {
+                        if(chess[j][piece.getColumn()] != getIsBlack(piece.isBlack())){
+                            break;
+                        }
+                        if(j == i + 4){
+                            return true;
+                        }
+                    }
+                }
+                
             }
         }
         else if(piece.getRow() > 10){
@@ -252,6 +316,20 @@ public class GobangView extends View {
         }
     }
 
+    public void restartChess(){
+        for (int i = 0; i < 15; i++) {
+            for (int j = 0; j < 15; j++) {
+                chess[i][j] = 0;
+            }
+        }
+        pieceList.clear();
+        invalidate();
+    }
+
+    public void setIsBlackChess(boolean isBlackChess) {
+        this.isBlackChess = isBlackChess;
+    }
+
     public void setIsCanClick(boolean isCanClick) {
         this.isCanClick = isCanClick;
     }
@@ -261,7 +339,7 @@ public class GobangView extends View {
     }
 
     public interface OnClickChessListener{
-        void onClickChess(int row, int column);
+        void onClickChess(int row, int column, boolean isAddSuccess);
     }
 
     public void setOnClickChessListener(OnClickChessListener onClickChessListener) {

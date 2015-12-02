@@ -1,5 +1,7 @@
 package me.fiveinarow.bean;
 
+import android.util.Log;
+
 import java.io.Serializable;
 
 /**
@@ -16,9 +18,13 @@ public class Piece implements Serializable{
 
     public Piece(String string) {
         String[] s = string.split(",");
-        row = Integer.valueOf(s[0].substring(s[0].charAt(':')+1));
-        column = Integer.valueOf(s[1].substring(s[1].charAt(':')+1));
-        isBlack = Boolean.valueOf(s[2].substring(s[2].charAt(':')+1));
+        for (int i = 0; i < s.length; i++) {
+            Log.e("piece:", s[i]);
+        }
+        row = Integer.valueOf(s[0].substring(s[0].indexOf(":")+1));
+        Log.e("piece;row-->","///" + row);
+        column = Integer.valueOf(s[1].substring(s[1].indexOf(":")+1));
+        isBlack = Boolean.valueOf(s[2].substring(s[2].indexOf(":")+1));
     }
 
     public int getRow() {
@@ -47,7 +53,7 @@ public class Piece implements Serializable{
 
     @Override
     public String toString() {
-        return "row:"+row+",column:"+column+",isBlack"+isBlack;
+        return "row:"+row+",column:"+column+",isBlack:"+isBlack;
     }
 
 
