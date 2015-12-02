@@ -22,7 +22,7 @@ import me.fiveinarow.widget.TwoButtonDialog;
 /**
  * Created by caowenhua on 2015/11/29.
  */
-public class PieceActivity extends Activity implements GobangView.OnClickChessListener{
+public class PieceActivity extends Activity implements GobangView.OnClickChessListener, GobangView.OnChessWinListener{
 
     private TextView tv_tip;
     private TextView tv_object;
@@ -45,6 +45,7 @@ public class PieceActivity extends Activity implements GobangView.OnClickChessLi
         tv_object = (TextView) findViewById(R.id.tv_object);
         view_gobang = (GobangView) findViewById(R.id.view_gobang);
         view_gobang.setOnClickChessListener(this);
+        view_gobang.setOnChessWinListener(this);
 
         isBlack = getIntent().getBooleanExtra("isBlack", true);
         isWaiting = !isBlack;
@@ -157,6 +158,19 @@ public class PieceActivity extends Activity implements GobangView.OnClickChessLi
                 startService(intent);
                 finish();
             }
-        });
+        }).setIsNeedToShow(true).build();
+
+    }
+
+    @Override
+    public void onChessWin(boolean isBlackWin) {
+        if(isBlackWin == isBlack){
+            Toast.makeText(this, "你赢了", Toast.LENGTH_SHORT).show();
+        }
+        else{
+            Toast.makeText(this, "你输了", Toast.LENGTH_SHORT).show();
+        }
+        view_gobang.restartChess();
+        view_gobang.setIsCanClick(true);
     }
 }

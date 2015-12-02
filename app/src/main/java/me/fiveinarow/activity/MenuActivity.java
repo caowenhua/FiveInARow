@@ -109,7 +109,8 @@ public class MenuActivity extends Activity implements View.OnClickListener, Adap
             String action = intent.getAction();
             // 发现设备
             if (BluetoothDevice.ACTION_FOUND.equals(action)) {
-                loadingDialog.dismiss();
+                if(loadingDialog != null)
+                    loadingDialog.dismiss();
                 showResult();
                 // 从Intent中获取设备对象
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);

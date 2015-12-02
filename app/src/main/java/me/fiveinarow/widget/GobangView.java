@@ -26,12 +26,13 @@ public class GobangView extends View {
 
     private Paint paint;
     private OnClickChessListener onClickChessListener;
+    private OnChessWinListener onChessWinListener;
 
     private List<Piece> pieceList;
     private boolean isCanClick;
     private boolean isBlackChess;
 
-    private int[][] chess;// 1 black -1 white 0 none
+    private int[][] chess;// 1 black 2 white 0 none
 
     public GobangView(Context context) {
         super(context);
@@ -169,10 +170,17 @@ public class GobangView extends View {
             chess[piece.getRow()][piece.getColumn()] = 1;
         }
         else {
-            chess[piece.getRow()][piece.getColumn()] = -1;
+            chess[piece.getRow()][piece.getColumn()] = 2;
         }
         pieceList.add(piece);
         invalidate();
+
+        if(isWin(chess, getIsBlack(piece.isBlack()))){
+            setIsCanClick(false);
+            if(onChessWinListener != null){
+                onChessWinListener.onChessWin(piece.isBlack());
+            }
+        }
     }
 
     public void addPiece(int row, int column, boolean isBlack){
@@ -180,7 +188,7 @@ public class GobangView extends View {
             chess[row][column] = 1;
         }
         else {
-            chess[row][column] = -1;
+            chess[row][column] = 2;
         }
         Piece piece = new Piece();
         piece.setColumn(column);
@@ -188,6 +196,13 @@ public class GobangView extends View {
         piece.setRow(row);
         pieceList.add(piece);
         invalidate();
+
+        if(isWin(chess, getIsBlack(piece.isBlack()))){
+            setIsCanClick(false);
+            if(onChessWinListener != null){
+                onChessWinListener.onChessWin(piece.isBlack());
+            }
+        }
     }
 
     private boolean judge(Piece piece){
@@ -279,7 +294,7 @@ public class GobangView extends View {
                         }
                     }
                 }
-                
+
             }
         }
         else if(piece.getRow() > 10){
@@ -312,7 +327,7 @@ public class GobangView extends View {
             return 1;
         }
         else {
-            return 0;
+            return 2;
         }
     }
 
@@ -324,6 +339,70 @@ public class GobangView extends View {
         }
         pieceList.clear();
         invalidate();
+    }
+
+    private boolean isWin(int[][] qipan,int color){
+        boolean colsWcoln = false;
+        int colors = (int) Math.pow(color, 5);
+        for(int row = 0;row<15;row++){
+            for(int col=0;col<15;col++){
+                //第一种
+                if(row<=10 && col<4){
+                //int x = qcolpan[col][row]*qcolpan[col][row]*qcolpan[col][row]*qcolpan[col][row]*qcolpan[col][row]//→
+                    int x = qipan[col][row]*qipan[col+1][row]*qipan[col+2][row]*qipan[col+3][row]*qipan[col+4][row];//→
+                    int y = qipan[col][row]*qipan[col+1][row+1]*qipan[col+2][row+2]*qipan[col+3][row+3]*qipan[col+4][row+4]; //→
+                    int z = qipan[col][row]*qipan[col][row+1]*qipan[col][row+2]*qipan[col][row+3]*qipan[col][row+4]; //→
+                    if(x == colors || y == colors || z == colors){
+                        colsWcoln = true;
+                    }
+                }
+                //第二种
+                if(row<=10 && col>=4 && col<=10 ){
+                    int x = qipan[col][row]*qipan[col+1][row]*qipan[col+2][row]*qipan[col+3][row]*qipan[col+4][row];//→
+                    int y = qipan[col][row]*qipan[col+1][row+1]*qipan[col+2][row+2]*qipan[col+3][row+3]*qipan[col+4][row+4]; //→
+                    int z = qipan[col][row]*qipan[col][row+1]*qipan[col][row+2]*qipan[col][row+3]*qipan[col][row+4]; //→
+                    int m = qipan[col][row]*qipan[col-1][row]*qipan[col-2][row]*qipan[col-3][row]*qipan[col-4][row];//→
+                    int n = qipan[col][row]*qipan[col-1][row+1]*qipan[col-2][row+2]*qipan[col-3][row+3]*qipan[col-4][row+4];//→
+                    if(x == colors || y == colors || z == colors || m == colors || n == colors){
+                        colsWcoln = true;
+                    }
+                }
+                //第三种
+                if(row<=10 && col>10 ){
+                    int z = qipan[col][row]*qipan[col][row+1]*qipan[col][row+2]*qipan[col][row+3]*qipan[col][row+4]; //→
+                    int m = qipan[col][row]*qipan[col-1][row]*qipan[col-2][row]*qipan[col-3][row]*qipan[col-4][row];//→
+                    int n = qipan[col][row]*qipan[col-1][row+1]*qipan[col-2][row+2]*qipan[col-3][row+3]*qipan[col-4][row+4];//→
+                    if( z == colors || m == colors || n==colors){
+                        colsWcoln = true;
+                    }
+                }
+                //第四种
+                if(row>10 && col<4){
+                    int x = qipan[col][row]*qipan[col+1][row]*qipan[col+2][row]*qipan[col+3][row]*qipan[col+4][row];//→
+                    if(x == colors){
+                        colsWcoln = true;
+                    }
+                }
+                //第五种
+                if(row>10 && col>=4 && col<=10){
+                    int x = qipan[col][row]*qipan[col+1][row]*qipan[col+2][row]*qipan[col+3][row]*qipan[col+4][row];//→
+                    int m = qipan[col][row]*qipan[col-1][row]*qipan[col-2][row]*qipan[col-3][row]*qipan[col-4][row];//→
+                    if(x == colors || m == colors)
+                    {
+                        colsWcoln = true;
+                    }
+                }
+                //第六种
+                if(row>10 && col>10)
+                {
+                    int m = qipan[col][row]*qipan[col-1][row]*qipan[col-2][row]*qipan[col-3][row]*qipan[col-4][row];//→
+                    if(m == colors ){
+                        colsWcoln = true;
+                    }
+                }
+            }
+        }
+        return colsWcoln;
     }
 
     public void setIsBlackChess(boolean isBlackChess) {
@@ -344,5 +423,9 @@ public class GobangView extends View {
 
     public void setOnClickChessListener(OnClickChessListener onClickChessListener) {
         this.onClickChessListener = onClickChessListener;
+    }
+
+    public void setOnChessWinListener(OnChessWinListener onChessWinListener) {
+        this.onChessWinListener = onChessWinListener;
     }
 }
