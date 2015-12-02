@@ -25,8 +25,9 @@ public class GobangView extends View {
     private RectF realRectf;
 
     private Paint paint;
-    private OnClickChessListener onClickChessListener;
+    private OnChessClickListener onClickChessListener;
     private OnChessWinListener onChessWinListener;
+    private OnChessRollbackListener onChessRollbackListener;
 
     private List<Piece> pieceList;
     private boolean isCanClick;
@@ -157,7 +158,7 @@ public class GobangView extends View {
                                 (int)((event.getX()-realRectf.left) / (realWidth / 15)), isBlackChess);
                     }
                     if(onClickChessListener != null){
-                        onClickChessListener.onClickChess(row, column, isAddSuccess);
+                        onClickChessListener.onChessClick(row, column, isAddSuccess);
                     }
                 }
             }
@@ -205,122 +206,139 @@ public class GobangView extends View {
         }
     }
 
-    private boolean judge(Piece piece){
-        if(piece.getRow() < 4){
-            //左上角
-            if(piece.getColumn() < 4){
-                for (int i = 0; i <= piece.getColumn(); i++) {
-                    for (int j = i; j < i + 5; j++) {
-                        if(chess[piece.getRow()][j] != getIsBlack(piece.isBlack())){
-                            break;
-                        }
-                        if(j == i + 4){
-                            return true;
-                        }
-                    }
-                }
-                for (int i = 0; i <= piece.getRow(); i++) {
-                    for (int j = i; j < i + 5; j++) {
-                        if(chess[j][piece.getColumn()] != getIsBlack(piece.isBlack())){
-                            break;
-                        }
-                        if(j == i + 4){
-                            return true;
-                        }
-                    }
-                }
-                for (int i = 0; i <= ((piece.getRow() < piece.getColumn()) ? piece.getRow() : piece.getColumn()); i++) {
-                    for (int j = 0; j < 5; j++) {
-                        if(chess[i+j][piece.getColumn()-piece.getRow()+i+j] != getIsBlack(piece.isBlack())){
-                            break;
-                        }
-                        if(j == i + 4){
-                            return true;
-                        }
-                    }
-                }
-            }
-            //右上角
-            else if(piece.getColumn() > 10){
-                for (int i = 14; i >= piece.getColumn(); i--) {
-                    for (int j = i; j > i - 5 ; j--) {
-                        if(chess[piece.getRow()][j] != getIsBlack(piece.isBlack())){
-                            break;
-                        }
-                        if(j == i - 4){
-                            return true;
-                        }
-                    }
-                }
-                for (int i = 0; i <= piece.getRow(); i++) {
-                    for (int j = i; j < i + 5; j++) {
-                        if(chess[j][piece.getColumn()] != getIsBlack(piece.isBlack())){
-                            break;
-                        }
-                        if(j == i + 4){
-                            return true;
-                        }
-                    }
-                }
-                for (int i = 0; i < ((piece.getRow() < 14 - piece.getColumn()) ? piece.getRow() : 14 - piece.getColumn()); i++) {
-                    for (int j = 0; j < 5; j++) {
-                        if(chess[i+j][14 - piece.getColumn()-piece.getRow()+i+j] != getIsBlack(piece.isBlack())){
-                            break;
-                        }
-                        if(j == i + 4){
-                            return true;
-                        }
-                    }
-                }
-            }
-            else{
-                for (int i = piece.getColumn() - 4; i <= piece.getColumn(); i++) {
-                    for (int j = i; j < i + 5; j++) {
-                        if(chess[piece.getRow()][j] != getIsBlack(piece.isBlack())){
-                            break;
-                        }
-                        if(j == i + 4){
-                            return true;
-                        }
-                    }
-                }
-                for (int i = 0; i <= piece.getRow(); i++) {
-                    for (int j = i; j < i + 5; j++) {
-                        if(chess[j][piece.getColumn()] != getIsBlack(piece.isBlack())){
-                            break;
-                        }
-                        if(j == i + 4){
-                            return true;
-                        }
-                    }
-                }
-
-            }
-        }
-        else if(piece.getRow() > 10){
-            if(piece.getColumn() < 4){
-
-            }
-            else if(piece.getColumn() > 10){
-
-            }
-            else{
-
+    public void rollback(){
+        if(pieceList.size() == 0){
+            if(onChessRollbackListener != null){
+                onChessRollbackListener.onChessRollbackFailed("没有可后退的步数了");
             }
         }
         else{
-            if(piece.getColumn() < 4){
-
+            Piece piece = pieceList.get(pieceList.size() - 1);
+            pieceList.remove(pieceList.size() - 1);
+            chess[piece.getRow()][piece.getColumn()] = 0;
+            if(onChessRollbackListener != null){
+                onChessRollbackListener.onChessRollbackSuccess(piece.getRow(), piece.getColumn(), piece.isBlack());
             }
-            else if(piece.getColumn() > 10){
-
-            }
-            else{
-
-            }
+            invalidate();
         }
-        return false;
     }
+
+//    private boolean judge(Piece piece){
+//        if(piece.getRow() < 4){
+//            //左上角
+//            if(piece.getColumn() < 4){
+//                for (int i = 0; i <= piece.getColumn(); i++) {
+//                    for (int j = i; j < i + 5; j++) {
+//                        if(chess[piece.getRow()][j] != getIsBlack(piece.isBlack())){
+//                            break;
+//                        }
+//                        if(j == i + 4){
+//                            return true;
+//                        }
+//                    }
+//                }
+//                for (int i = 0; i <= piece.getRow(); i++) {
+//                    for (int j = i; j < i + 5; j++) {
+//                        if(chess[j][piece.getColumn()] != getIsBlack(piece.isBlack())){
+//                            break;
+//                        }
+//                        if(j == i + 4){
+//                            return true;
+//                        }
+//                    }
+//                }
+//                for (int i = 0; i <= ((piece.getRow() < piece.getColumn()) ? piece.getRow() : piece.getColumn()); i++) {
+//                    for (int j = 0; j < 5; j++) {
+//                        if(chess[i+j][piece.getColumn()-piece.getRow()+i+j] != getIsBlack(piece.isBlack())){
+//                            break;
+//                        }
+//                        if(j == i + 4){
+//                            return true;
+//                        }
+//                    }
+//                }
+//            }
+//            //右上角
+//            else if(piece.getColumn() > 10){
+//                for (int i = 14; i >= piece.getColumn(); i--) {
+//                    for (int j = i; j > i - 5 ; j--) {
+//                        if(chess[piece.getRow()][j] != getIsBlack(piece.isBlack())){
+//                            break;
+//                        }
+//                        if(j == i - 4){
+//                            return true;
+//                        }
+//                    }
+//                }
+//                for (int i = 0; i <= piece.getRow(); i++) {
+//                    for (int j = i; j < i + 5; j++) {
+//                        if(chess[j][piece.getColumn()] != getIsBlack(piece.isBlack())){
+//                            break;
+//                        }
+//                        if(j == i + 4){
+//                            return true;
+//                        }
+//                    }
+//                }
+//                for (int i = 0; i < ((piece.getRow() < 14 - piece.getColumn()) ? piece.getRow() : 14 - piece.getColumn()); i++) {
+//                    for (int j = 0; j < 5; j++) {
+//                        if(chess[i+j][14 - piece.getColumn()-piece.getRow()+i+j] != getIsBlack(piece.isBlack())){
+//                            break;
+//                        }
+//                        if(j == i + 4){
+//                            return true;
+//                        }
+//                    }
+//                }
+//            }
+//            else{
+//                for (int i = piece.getColumn() - 4; i <= piece.getColumn(); i++) {
+//                    for (int j = i; j < i + 5; j++) {
+//                        if(chess[piece.getRow()][j] != getIsBlack(piece.isBlack())){
+//                            break;
+//                        }
+//                        if(j == i + 4){
+//                            return true;
+//                        }
+//                    }
+//                }
+//                for (int i = 0; i <= piece.getRow(); i++) {
+//                    for (int j = i; j < i + 5; j++) {
+//                        if(chess[j][piece.getColumn()] != getIsBlack(piece.isBlack())){
+//                            break;
+//                        }
+//                        if(j == i + 4){
+//                            return true;
+//                        }
+//                    }
+//                }
+//
+//            }
+//        }
+//        else if(piece.getRow() > 10){
+//            if(piece.getColumn() < 4){
+//
+//            }
+//            else if(piece.getColumn() > 10){
+//
+//            }
+//            else{
+//
+//            }
+//        }
+//        else{
+//            if(piece.getColumn() < 4){
+//
+//            }
+//            else if(piece.getColumn() > 10){
+//
+//            }
+//            else{
+//
+//            }
+//        }
+//        return false;
+//    }
 
     private int getIsBlack(boolean isBlack){
         if(isBlack){
@@ -413,19 +431,28 @@ public class GobangView extends View {
         this.isCanClick = isCanClick;
     }
 
+    public interface OnChessRollbackListener{
+        void onChessRollbackSuccess(int row, int column, boolean isBlack);
+        void onChessRollbackFailed(String reason);
+    }
+
     public interface OnChessWinListener{
         void onChessWin(boolean isBlackWin);
     }
 
-    public interface OnClickChessListener{
-        void onClickChess(int row, int column, boolean isAddSuccess);
+    public interface OnChessClickListener{
+        void onChessClick(int row, int column, boolean isAddSuccess);
     }
 
-    public void setOnClickChessListener(OnClickChessListener onClickChessListener) {
+    public void setOnChessClickListener(OnChessClickListener onClickChessListener) {
         this.onClickChessListener = onClickChessListener;
     }
 
     public void setOnChessWinListener(OnChessWinListener onChessWinListener) {
         this.onChessWinListener = onChessWinListener;
+    }
+
+    public void setOnChessRollbackListener(OnChessRollbackListener onChessRollbackListener) {
+        this.onChessRollbackListener = onChessRollbackListener;
     }
 }

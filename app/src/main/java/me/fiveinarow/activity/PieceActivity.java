@@ -22,7 +22,7 @@ import me.fiveinarow.widget.TwoButtonDialog;
 /**
  * Created by caowenhua on 2015/11/29.
  */
-public class PieceActivity extends Activity implements GobangView.OnClickChessListener, GobangView.OnChessWinListener{
+public class PieceActivity extends Activity implements GobangView.OnChessClickListener, GobangView.OnChessWinListener{
 
     private TextView tv_tip;
     private TextView tv_object;
@@ -44,7 +44,7 @@ public class PieceActivity extends Activity implements GobangView.OnClickChessLi
         tv_tip = (TextView) findViewById(R.id.tv_tip);
         tv_object = (TextView) findViewById(R.id.tv_object);
         view_gobang = (GobangView) findViewById(R.id.view_gobang);
-        view_gobang.setOnClickChessListener(this);
+        view_gobang.setOnChessClickListener(this);
         view_gobang.setOnChessWinListener(this);
 
         isBlack = getIntent().getBooleanExtra("isBlack", true);
@@ -98,7 +98,7 @@ public class PieceActivity extends Activity implements GobangView.OnClickChessLi
 
 
     @Override
-    public void onClickChess(int row, int column, boolean isAddSuccess) {
+    public void onChessClick(int row, int column, boolean isAddSuccess) {
         if(isAddSuccess){
             Piece piece = new Piece();
             piece.setRow(row);
